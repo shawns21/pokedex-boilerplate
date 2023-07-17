@@ -9,44 +9,73 @@ app.use(express.static("public"));
 
 const pokeBank = require('./pokeBank');
 
-const pokemon = pokeBank.list();
-
-app.get("/", (req, res) => res.send(
+app.get("/", (req, res) => {
+  const pokemonList = pokeBank.list();
+  let html = 
   `<!DOCTYPE html>
-  <html>
+      <html>
+        <head>
+          <title>My Pokedex</title>
+          <link rel="stylesheet" href="/style.css" />
+        </head>
+        <body>
+          <h1>Pokedex</h1>
+        <body>
+      </html>`;
+  pokemonList.forEach((pokemon) => {
+    html += `<p><a href="/pokemon/${pokemon.id}">${pokemon.name}</a></p>`;
+  });
+  res.send(html);
+});
+
+app.get("/pokemon/:id", (req, res) => {
+  const id = req.params.id;
+  const pokemon = pokeBank.find(id);
+
+  try {
+    if (!pokemon.id) {
+      throw new Error("Not Found"); 
+    } else {
+      let html =
+      `<!DOCTYPE html>
+      <html>
+        <head>
+          <title>My Pokedex</title>
+          <link rel="stylesheet" href="/style.css" />
+        </head>
+        <body>
+          <h1>${pokemon.name}</h1>
+        <body>
+      </html>`;
+
+      html += `<p>Type: ${pokemon.type}</p>`;
+      html += `<p>Trainer: ${pokemon.trainer}</p>`;
+      html += `<p>Date: ${pokemon.date}</p>`;
+      res.send(html);
+    }
+  }
+
+  catch(error){
+    res.status(404);
+    const html = `
+    <!DOCTYPE html>
+    <html>
     <head>
       <title>My Pokedex</title>
       <link rel="stylesheet" href="/style.css" />
     </head>
-    <body>
-      <div class="pokemon-list">
-        <header><img src="/logo.png" />Pokedex</header>
-        ${pokemon
-          .map(
-            (pokemon) => `
-        <div class="pokemon-item">
-          <img class="pokemon-img" src={pokemon.image} />
-          <p>
-            <span class="pokemon-position">${pokemon.id}. ▲</span>${pokemon.name}
-            <small>(Trained by ${pokemon.trainer})</small>
-          </p>
-          <small class="pokemon-info">
-            Type: ${pokemon.type} | Date Caught: ${pokemon.date}
-          </small>
-        </div>
-        `
-          )
-          .join("")}
+    <body>  
+      <div class="not-found">
+        <p>Pika pika... Page Not Found</p>
+        <img src="/error.png" />
       </div>
     </body>
-  </html>
-  `));
-
-app.get("/pokemon/:id", (req, res) => {
-  const id = req.params.id;
-  const post = pokeBank.find(id);
-  res.send("test");
+    </html>`;
+    res.send(html);
+  }
 });
+
+
 
 const PORT = 3000;
 app.listen(PORT, () => {
